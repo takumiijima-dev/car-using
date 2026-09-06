@@ -198,7 +198,13 @@
                 cell.appendChild(dayHeader);
 
                 // 該当日の予約を検索
-                const matchRes = reservations.filter(r => r.date === dateString);
+                // 該当日の予約を検索（日付の形式のズレやスラッシュ・時間を無視して一致させる）
+                const matchRes = reservations.filter(r => {
+                    if (!r.date) return false;
+                    // スラッシュやハイフン、時刻を削って「YYYY-MM-DD」の形に整える
+                    const cleanDate = String(r.date).split('T')[0].replaceAll('/', '-');
+                    return cleanDate === dateString;
+                });
                 const contentDiv = document.createElement('div');
                 contentDiv.className = "flex-1 overflow-y-auto space-y-1 mt-1";
 
