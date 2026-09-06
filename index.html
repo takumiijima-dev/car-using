@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>家族用カーシェア予約</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- ヘッダー -->
+    <header class="bg-indigo-600 text-white shadow-md">
+        <div class="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-xl font-bold flex items-center gap-2">
+                🚗 家族のクルマ予約
+            </h1>
+            <nav class="flex gap-2">
+                <button onclick="switchTab('calendar')" id="btn-calendar" class="px-4 py-2 rounded-lg font-medium transition bg-indigo-700 shadow-inner">
+                    閲覧（カレンダー）
+                </button>
+                <button onclick="switchTab('register')" id="btn-register" class="px-4 py-2 rounded-lg font-medium transition bg-indigo-500 hover:bg-indigo-600">
+                    新規予約
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main class="max-w-4xl mx-auto px-4 py-8 flex-1 w-full relative">
+
+        <!-- ローディング表示 -->
+        <div id="loading" class="hidden absolute inset-0 bg-white/70 z-40 flex justify-center items-center">
+            <div class="animate-spin rounded-full h-10 w-10 border-4 border-indigo-600 border-t-transparent"></div>
+        </div>
+
+        <!-- モーダル通知用 -->
+        <div id="toast" class="fixed bottom-5 right-5 bg-emerald-600 text-white px-6 py-3 rounded-xl shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 z-50 font-medium">
+            予約が完了しました！
+        </div>
+
+        <!-- 1. 閲覧画面（カレンダー形式） -->
+        <section id="view-calendar" class="space-y-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                <!-- カレンダーコントロール -->
+                <div class="flex justify-between items-center mb-6">
+                    <h2 id="calendar-title" class="text-xl font-bold text-slate-700"></h2>
+                    <div class="flex gap-2">
+                        <button onclick="changeMonth(-1)" class="p-2 border rounded-lg hover:bg-slate-100 transition">◀ 前月</button>
+                        <button onclick="changeMonth(1)" class="p-2 border rounded-lg hover:bg-slate-100 transition">次月 ▶</button>
+                    </div>
+                </div>
+
+                <!-- 曜日ヘッダー -->
+                <div class="grid grid-cols-7 gap-1 text-center font-bold text-sm text-slate-500 mb-2">
+                    <div class="text-red-500">日</div>
+                    <div>月</div>
+                    <div>火</div>
+                    <div>水</div>
+                    <div>木</div>
+                    <div>金</div>
+                    <div class="text-blue-500">土</div>
+                </div>
+
+                <!-- カレンダー本体グリッド -->
+                <div id="calendar-grid" class="grid grid-cols-7 gap-1">
+                    <!-- JSで動적生成 -->
+                </div>
+            </div>
+
+            <!-- 登録されている予約一覧 -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-slate-700">📅 登録されている予約一覧</h3>
+                    <button onclick="fetchReservations()" class="text-xs bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-slate-600 transition">🔄 更新する</button>
+                </div>
+                <div id="reservation-list" class="space-y-3">
+                    <!-- JSで動的生成 -->
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. 登録画面 -->
+        <section id="view-register" class="hidden max-w-lg mx-auto">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 md:p-8">
+                <h2 class="text-xl font-bold text-slate-700 mb-6 text-center">🚗 クルマを使う日を登録する</h2>
+                <form id="reservation-form" onsubmit="handleRegister(event)" class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-600 mb-2">名前（利用者）</label>
+                        <input type="text" id="user-name" required placeholder="例：お父さん、太郎" class="w-full border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-600 mb-2">利用日程</label>
+                        <input type="date" id="reservation-date" required class="w-full border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition shadow-md">
+                        予約を登録する
+                    </button>
+                </form>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- フッター -->
+    <footer class="text-center py-6 text-xs text-slate-400">
+        &copy; 家族のカーシェア管理システム
+    </footer>
+
+    <!-- JavaScript ロジック -->
+    <script>
+        // ★ここにステップ3で取得した「ウェブアプリのURL」を貼り付けてください
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyMPCdO4toiayPZiP9MhoCsmBL_kxOwTZEhFA7fPBPjUpSk2U_XCGz6fE5baJSiKkYC/exec';
+
+        let reservations = [];
+        let currentDate = new Date();
+
+        // 起動時にデータを取得
+        window.onload = function() {
+            fetchReservations();
+        };
+
+        // スプレッドシートからデータを取得する
+        function fetchReservations() {
+            showLoading(true);
+            fetch(`${SCRIPT_URL}?action=get`)
+                .then(response => response.json())
+                .then(data => {
+                    reservations = data;
+                    renderCalendar();
+                    showLoading(false);
+                })
+                .catch(error => {
+                    console.error('データ取得エラー:', error);
+                    alert('データの取得に失敗しました。URLを確認してください。');
+                    showLoading(false);
+                });
+        }
+
+        // タブ切り替え関数
+        function switchTab(tab) {
+            const calendarSection = document.getElementById('view-calendar');
+            const registerSection = document.getElementById('view-register');
+            const btnCalendar = document.getElementById('btn-calendar');
+            const btnRegister = document.getElementById('btn-register');
+
+            if (tab === 'calendar') {
+                calendarSection.classList.remove('hidden');
+                registerSection.classList.add('hidden');
+                btnCalendar.className = "px-4 py-2 rounded-lg font-medium transition bg-indigo-700 shadow-inner";
+                btnRegister.className = "px-4 py-2 rounded-lg font-medium transition bg-indigo-500 hover:bg-indigo-600";
+                fetchReservations(); // タブ切り替え時に最新化
+            } else {
+                calendarSection.classList.add('hidden');
+                registerSection.classList.remove('hidden');
+                btnRegister.className = "px-4 py-2 rounded-lg font-medium transition bg-indigo-700 shadow-inner";
+                btnCalendar.className = "px-4 py-2 rounded-lg font-medium transition bg-indigo-500 hover:bg-indigo-600";
+            }
+        }
+
+        // カレンダーの月変更
+        function changeMonth(direction) {
+            currentDate.setMonth(currentDate.getMonth() + direction);
+            renderCalendar();
+        }
+
+        // カレンダーの描画
+        function renderCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+
+            document.getElementById('calendar-title').innerText = `${year}年 ${month + 1}月`;
+
+            const firstDayIndex = new Date(year, month, 1).getDay();
+            const lastDay = new Date(year, month + 1, 0).getDate();
+
+            const grid = document.getElementById('calendar-grid');
+            grid.innerHTML = '';
+
+            // 空白セル（前月分）
+            for (let i = 0; i < firstDayIndex; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.className = "h-24 bg-slate-50/50 rounded-xl border border-slate-100";
+                grid.appendChild(emptyCell);
+            }
+
+            // 当月の日付セル
+            for (let day = 1; day <= lastDay; day++) {
+                const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                
+                const cell = document.createElement('div');
+                cell.className = "h-24 border border-slate-200 rounded-xl p-1.5 flex flex-col justify-between bg-white overflow-hidden";
+
+                const dayHeader = document.createElement('div');
+                dayHeader.className = "text-xs font-semibold text-slate-500";
+                dayHeader.innerText = day;
+                cell.appendChild(dayHeader);
+
+                // 該当日の予約を検索
+                const matchRes = reservations.filter(r => r.date === dateString);
+                const contentDiv = document.createElement('div');
+                contentDiv.className = "flex-1 overflow-y-auto space-y-1 mt-1";
+
+                matchRes.forEach(res => {
+                    const badge = document.createElement('div');
+                    badge.className = "text-xs px-1.5 py-0.5 rounded border font-medium truncate bg-indigo-50 text-indigo-700 border-indigo-200";
+                    badge.innerText = `🚗 ${res.name}`;
+                    badge.title = `${res.name}が利用`;
+                    contentDiv.appendChild(badge);
+                });
+
+                cell.appendChild(contentDiv);
+                grid.appendChild(cell);
+            }
+
+            renderReservationList();
+        }
+
+        // リスト形式の予約一覧描画
+        function renderReservationList() {
+            const listContainer = document.getElementById('reservation-list');
+            listContainer.innerHTML = '';
+
+            // 日付順にソート
+            const sorted = [...reservations].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            if (sorted.length === 0) {
+                listContainer.innerHTML = `<p class="text-sm text-slate-400 text-center py-4">現在登録されている予約はありません。</p>`;
+                return;
+            }
+
+            sorted.forEach(res => {
+                const item = document.createElement('div');
+                item.className = "flex justify-between items-center p-3 bg-slate-50 border border-slate-200 rounded-xl";
+                
+                item.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-100 text-indigo-700">${res.name}</span>
+                        <span class="text-sm font-medium text-slate-700">${res.date} 利用</span>
+                    </div>
+                    <button onclick="deleteReservation('${res.id}')" class="text-xs text-rose-500 hover:text-rose-700 font-medium px-2 py-1 rounded transition">削除</button>
+                `;
+                listContainer.appendChild(item);
+            });
+        }
+
+        // 登録処理
+        function handleRegister(e) {
+            e.preventDefault();
+            const name = document.getElementById('user-name').value;
+            const date = document.getElementById('reservation-date').value;
+
+            if (!name || !date) return;
+
+            const newReservation = {
+                id: 'res_' + Date.now(),
+                name: name,
+                date: date
+            };
+
+            showLoading(true);
+
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'add', ...newReservation })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.status === 'success') {
+                    document.getElementById('reservation-form').reset();
+                    showToast("予約を登録しました！");
+                    fetchReservations(); // 最新データを再取得
+                    switchTab('calendar');
+                } else {
+                    alert('登録に失敗しました。');
+                    showLoading(false);
+                }
+            })
+            .catch(error => {
+                console.error('通信エラー:', error);
+                alert('通信エラーが発生しました。');
+                showLoading(false);
+            });
+        }
+
+        // 予約の削除
+        function deleteReservation(id) {
+            if (confirm("この予約を削除してもよろしいですか？")) {
+                showLoading(true);
+                fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'delete', id: id })
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.status === 'success') {
+                        showToast("予約を削除しました。");
+                        fetchReservations(); // 最新データを再取得
+                    } else {
+                        alert('削除に失敗しました。');
+                        showLoading(false);
+                    }
+                })
+                .catch(error => {
+                    console.error('通信エラー:', error);
+                    alert('通信エラーが発生しました。');
+                    showLoading(false);
+                });
+            }
+        }
+
+        // ローディング表示切り替え
+        function showLoading(isLoading) {
+            const loader = document.getElementById('loading');
+            if (isLoading) {
+                loader.classList.remove('hidden');
+            } else {
+                loader.classList.add('hidden');
+            }
+        }
+
+        // トースト通知を表示するヘルパー
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.innerText = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
