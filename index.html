@@ -2,23 +2,34 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>デリカ予約</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>家族のクルマ予約</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        /* スマホでタッチしやすいように最小の高さを調整 */
+        .calendar-cell {
+            min-height: 90px;
+        }
+        @media (min-width: 640px) {
+            .calendar-cell {
+                min-height: 110px;
+            }
+        }
+    </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased">
 
-    <!-- ヘッダー -->
-    <header class="bg-indigo-600 text-white shadow-md">
-        <div class="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
-            <h1 class="text-xl font-bold flex items-center gap-2">
-                🚗 デリカ予約
+    <!-- ヘッダー（スマホで文字がはみ出さないよう調整） -->
+    <header class="bg-indigo-600 text-white shadow-md sticky top-0 z-30">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+            <h1 class="text-base sm:text-xl font-bold flex items-center gap-2">
+                🚗 家族のクルマ予約
             </h1>
-            <nav class="flex gap-2">
-                <button onclick="switchTab('calendar')" id="btn-calendar" class="px-4 py-2 rounded-lg font-medium transition bg-indigo-700 shadow-inner">
-                    閲覧（カレンダー）
+            <nav class="flex gap-1.5 sm:gap-2">
+                <button onclick="switchTab('calendar')" id="btn-calendar" class="px-3 py-1.5 text-xs sm:text-sm rounded-lg font-medium transition bg-indigo-700 shadow-inner">
+                    カレンダー
                 </button>
-                <button onclick="switchTab('register')" id="btn-register" class="px-4 py-2 rounded-lg font-medium transition bg-indigo-500 hover:bg-indigo-600">
+                <button onclick="switchTab('register')" id="btn-register" class="px-3 py-1.5 text-xs sm:text-sm rounded-lg font-medium transition bg-indigo-500 hover:bg-indigo-600">
                     新規予約
                 </button>
             </nav>
@@ -26,7 +37,7 @@
     </header>
 
     <!-- メインコンテンツ -->
-    <main class="max-w-4xl mx-auto px-4 py-8 flex-1 w-full relative">
+    <main class="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-8 flex-1 w-full relative">
 
         <!-- ローディング表示 -->
         <div id="loading" class="hidden absolute inset-0 bg-white/70 z-40 flex justify-center items-center">
@@ -34,24 +45,24 @@
         </div>
 
         <!-- モーダル通知用 -->
-        <div id="toast" class="fixed bottom-5 right-5 bg-emerald-600 text-white px-6 py-3 rounded-xl shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 z-50 font-medium">
+        <div id="toast" class="fixed bottom-5 right-5 left-5 sm:left-auto bg-emerald-600 text-white px-6 py-3 rounded-xl shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 z-50 font-medium text-center sm:text-left">
             予約が完了しました！
         </div>
 
         <!-- 1. 閲覧画面（カレンダー形式） -->
-        <section id="view-calendar" class="space-y-6">
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+        <section id="view-calendar" class="space-y-4 sm:space-y-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-6">
                 <!-- カレンダーコントロール -->
-                <div class="flex justify-between items-center mb-6">
-                    <h2 id="calendar-title" class="text-xl font-bold text-slate-700"></h2>
-                    <div class="flex gap-2">
-                        <button onclick="changeMonth(-1)" class="p-2 border rounded-lg hover:bg-slate-100 transition">◀ 前月</button>
-                        <button onclick="changeMonth(1)" class="p-2 border rounded-lg hover:bg-slate-100 transition">次月 ▶</button>
+                <div class="flex justify-between items-center mb-4 sm:mb-6">
+                    <h2 id="calendar-title" class="text-lg sm:text-xl font-bold text-slate-700"></h2>
+                    <div class="flex gap-1.5 sm:gap-2">
+                        <button onclick="changeMonth(-1)" class="px-3 py-1.5 text-xs sm:text-sm border rounded-lg hover:bg-slate-100 transition">◀ 前月</button>
+                        <button onclick="changeMonth(1)" class="px-3 py-1.5 text-xs sm:text-sm border rounded-lg hover:bg-slate-100 transition">次月 ▶</button>
                     </div>
                 </div>
 
                 <!-- 曜日ヘッダー -->
-                <div class="grid grid-cols-7 gap-1 text-center font-bold text-sm text-slate-500 mb-2">
+                <div class="grid grid-cols-7 gap-1 text-center font-bold text-xs sm:text-sm text-slate-500 mb-2">
                     <div class="text-red-500">日</div>
                     <div>月</div>
                     <div>火</div>
@@ -68,12 +79,12 @@
             </div>
 
             <!-- 登録されている予約一覧 -->
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-6">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-bold text-slate-700">📅 登録されている予約一覧</h3>
-                    <button onclick="fetchReservations()" class="text-xs bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-slate-600 transition">🔄 更新する</button>
+                    <h3 class="text-base sm:text-lg font-bold text-slate-700">📅 登録されている予約一覧</h3>
+                    <button onclick="fetchReservations()" class="text-xs bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-slate-600 transition">🔄 更新</button>
                 </div>
-                <div id="reservation-list" class="space-y-3">
+                <div id="reservation-list" class="space-y-2 sm:space-y-3">
                     <!-- JSで動的生成 -->
                 </div>
             </div>
@@ -81,31 +92,31 @@
 
         <!-- 2. 登録画面 -->
         <section id="view-register" class="hidden max-w-lg mx-auto">
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 md:p-8">
-                <h2 class="text-xl font-bold text-slate-700 mb-6 text-center">🚗 クルマを使う日時を登録する</h2>
-                <form id="reservation-form" onsubmit="handleRegister(event)" class="space-y-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-8">
+                <h2 class="text-lg sm:text-xl font-bold text-slate-700 mb-6 text-center">🚗 クルマを使う日時を登録する</h2>
+                <form id="reservation-form" onsubmit="handleRegister(event)" class="space-y-5">
                     <div>
-                        <label class="block text-sm font-semibold text-slate-600 mb-2">名前（利用者）</label>
-                        <input type="text" id="user-name" required placeholder="例：お父さん、太郎" class="w-full border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
+                        <label class="block text-sm font-semibold text-slate-600 mb-1.5">名前（利用者）</label>
+                        <input type="text" id="user-name" required placeholder="例：お父さん、太郎" class="w-full border border-slate-300 rounded-xl p-3 text-base focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
                     </div>
 
                     <div>
-                        <label class="block text-sm font-semibold text-slate-600 mb-2">利用日程</label>
-                        <input type="date" id="reservation-date" required class="w-full border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <label class="block text-sm font-semibold text-slate-600 mb-1.5">利用日程</label>
+                        <input type="date" id="reservation-date" required class="w-full border border-slate-300 rounded-xl p-3 text-base focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
                     </div>
 
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-sm font-semibold text-slate-600 mb-2">開始時間（任意）</label>
-                            <input type="time" id="start-time" class="w-full border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
+                            <label class="block text-xs sm:text-sm font-semibold text-slate-600 mb-1.5">開始時間（任意）</label>
+                            <input type="time" id="start-time" class="w-full border border-slate-300 rounded-xl p-3 text-base focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
                         </div>
                         <div>
-                            <label class="block text-sm font-semibold text-slate-600 mb-2">終了時間（任意）</label>
-                            <input type="time" id="end-time" class="w-full border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
+                            <label class="block text-xs sm:text-sm font-semibold text-slate-600 mb-1.5">終了時間（任意）</label>
+                            <input type="time" id="end-time" class="w-full border border-slate-300 rounded-xl p-3 text-base focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
                         </div>
                     </div>
 
-                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition shadow-md">
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl transition shadow-md text-base mt-2">
                         予約を登録する
                     </button>
                 </form>
@@ -116,7 +127,7 @@
 
     <!-- フッター -->
     <footer class="text-center py-6 text-xs text-slate-400">
-        &copy; takumiijima
+        &copy; 家族のカーシェア管理システム
     </footer>
 
     <!-- JavaScript ロジック -->
@@ -156,14 +167,14 @@
             if (tab === 'calendar') {
                 calendarSection.classList.remove('hidden');
                 registerSection.classList.add('hidden');
-                btnCalendar.className = "px-4 py-2 rounded-lg font-medium transition bg-indigo-700 shadow-inner";
-                btnRegister.className = "px-4 py-2 rounded-lg font-medium transition bg-indigo-500 hover:bg-indigo-600";
+                btnCalendar.className = "px-3 py-1.5 text-xs sm:text-sm rounded-lg font-medium transition bg-indigo-700 shadow-inner";
+                btnRegister.className = "px-3 py-1.5 text-xs sm:text-sm rounded-lg font-medium transition bg-indigo-500 hover:bg-indigo-600";
                 fetchReservations();
             } else {
                 calendarSection.classList.add('hidden');
                 registerSection.classList.remove('hidden');
-                btnRegister.className = "px-4 py-2 rounded-lg font-medium transition bg-indigo-700 shadow-inner";
-                btnCalendar.className = "px-4 py-2 rounded-lg font-medium transition bg-indigo-500 hover:bg-indigo-600";
+                btnRegister.className = "px-3 py-1.5 text-xs sm:text-sm rounded-lg font-medium transition bg-indigo-700 shadow-inner";
+                btnCalendar.className = "px-3 py-1.5 text-xs sm:text-sm rounded-lg font-medium transition bg-indigo-500 hover:bg-indigo-600";
             }
         }
 
@@ -186,7 +197,7 @@
 
             for (let i = 0; i < firstDayIndex; i++) {
                 const emptyCell = document.createElement('div');
-                emptyCell.className = "h-28 bg-slate-50/50 rounded-xl border border-slate-100";
+                emptyCell.className = "calendar-cell bg-slate-50/50 rounded-xl border border-slate-100";
                 grid.appendChild(emptyCell);
             }
 
@@ -194,14 +205,13 @@
                 const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 
                 const cell = document.createElement('div');
-                cell.className = "h-28 border border-slate-200 rounded-xl p-1.5 flex flex-col justify-between bg-white overflow-hidden";
+                cell.className = "calendar-cell border border-slate-200 rounded-xl p-1 flex flex-col justify-between bg-white overflow-hidden";
 
                 const dayHeader = document.createElement('div');
-                dayHeader.className = "text-xs font-semibold text-slate-500";
+                dayHeader.className = "text-[11px] sm:text-xs font-semibold text-slate-500";
                 dayHeader.innerText = day;
                 cell.appendChild(dayHeader);
 
-                // 該当日の予約を検索（日付フォーマットの揺れに対応）
                 const matchRes = reservations.filter(r => {
                     if (!r.date) return false;
                     const cleanDate = String(r.date).split('T')[0].replaceAll('/', '-');
@@ -209,18 +219,17 @@
                 });
 
                 const contentDiv = document.createElement('div');
-                contentDiv.className = "flex-1 overflow-y-auto space-y-1 mt-1";
+                contentDiv.className = "flex-1 overflow-y-auto space-y-0.5 mt-0.5";
 
                 matchRes.forEach(res => {
                     const badge = document.createElement('div');
-                    badge.className = "text-xs px-1.5 py-0.5 rounded border font-medium bg-indigo-50 text-indigo-700 border-indigo-200 truncate";
+                    badge.className = "text-[10px] sm:text-xs px-1 py-0.5 rounded border font-medium bg-indigo-50 text-indigo-700 border-indigo-200 truncate";
                     
-                    // 時間がある場合は時間もバッジに表示
                     let timeText = '';
                     if (res.startTime) {
-                        timeText = ` (${res.startTime}${res.endTime ? '〜' + res.endTime : ''})`;
+                        timeText = ` (${res.startTime})`;
                     }
-                    badge.innerText = `🚗 ${res.name}${timeText}`;
+                    badge.innerText = `🚗${res.name}${timeText}`;
                     badge.title = `${res.name}が利用${timeText}`;
                     
                     contentDiv.appendChild(badge);
@@ -246,7 +255,7 @@
 
             sorted.forEach(res => {
                 const item = document.createElement('div');
-                item.className = "flex justify-between items-center p-3 bg-slate-50 border border-slate-200 rounded-xl";
+                item.className = "flex justify-between items-center p-2.5 sm:p-3 bg-slate-50 border border-slate-200 rounded-xl gap-2";
                 
                 let timeText = '';
                 if (res.startTime) {
@@ -254,11 +263,11 @@
                 }
 
                 item.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-100 text-indigo-700">${res.name}</span>
-                        <span class="text-sm font-medium text-slate-700">${res.date} 利用 ${timeText}</span>
+                    <div class="flex items-center gap-2 sm:gap-3 overflow-hidden">
+                        <span class="px-2 py-1 rounded-lg text-xs font-bold bg-indigo-100 text-indigo-700 shrink-0">${res.name}</span>
+                        <span class="text-xs sm:text-sm font-medium text-slate-700 truncate">${res.date} ${timeText}</span>
                     </div>
-                    <button onclick="deleteReservation('${res.id}')" class="text-xs text-rose-500 hover:text-rose-700 font-medium px-2 py-1 rounded transition">削除</button>
+                    <button onclick="deleteReservation('${res.id}')" class="text-xs text-rose-500 hover:text-rose-700 font-medium px-2 py-1 rounded shrink-0 transition">削除</button>
                 `;
                 listContainer.appendChild(item);
             });
